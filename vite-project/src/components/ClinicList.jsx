@@ -1,24 +1,30 @@
 import { useEffect, useState } from "react";
+import { getClinics } from "../api";
 
 function ClinicList() {
   const [clinics, setClinics] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/clinics")
-      .then(res => res.json())
-      .then(data => setClinics(data));
+    async function fetchData() {
+      const data = await getClinics();
+      setClinics(data);
+    }
+    fetchData();
   }, []);
 
   return (
-    <div style={{ marginTop: "20px" }}>
-      <h2>Nearby Clinics</h2>
-      <ul>
-        {clinics.map(clinic => (
-          <li key={clinic.id}>
-            <b>{clinic.name}</b> – Medicines: {clinic.medicines.join(", ")}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <h2>Clinics</h2>
+
+      {clinics.length === 0 && <p>No clinics found</p>}
+
+      {clinics.map((clinic) => (
+        <div key={clinic._id} style={{ border: "1px solid #ccc", margin: "10px", padding: "10px" }}>
+          <h3>{clinic.name}</h3>
+          <p>Type: {clinic.type}</p>
+          <p>Location: {clinic.location}</p>
+        </div>
+      ))}
     </div>
   );
 }

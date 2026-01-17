@@ -1,26 +1,19 @@
 const express = require("express");
+const Clinic = require("../models/Clinic");
+
 const router = express.Router();
 
-const clinics = [
-  {
-    id: 1,
-    name: "Village Clinic",
-    medicines: ["Paracetamol", "ORS"]
-  },
-  {
-    id: 2,
-    name: "Primary Health Center",
-    medicines: ["Antibiotics", "Insulin"]
-  },
-  {
-    id: 3,
-    name: "District Hospital",
-    medicines: ["Emergency Care"]
-  }
-];
-
-router.get("/", (req, res) => {
+// Get all clinics
+router.get("/", async (req, res) => {
+  const clinics = await Clinic.find();
   res.json(clinics);
+});
+
+// Add a clinic
+router.post("/", async (req, res) => {
+  const clinic = new Clinic(req.body);
+  await clinic.save();
+  res.json(clinic);
 });
 
 module.exports = router;
