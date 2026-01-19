@@ -1,40 +1,57 @@
 import { useState } from "react";
 
-function SymptomForm() {
+function SymptomForm({ onSubmit }) {
   const [symptoms, setSymptoms] = useState("");
-  const [suggestion, setSuggestion] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const input = symptoms.toLowerCase();
-
-    if (input.includes("accident") || input.includes("chest") || input.includes("fracture")) {
-      setSuggestion("Recommended: Hospital");
-    } else if (input.includes("fever") || input.includes("cold") || input.includes("cough")) {
-      setSuggestion("Recommended: Clinic / PHC");
-    } else {
-      setSuggestion("Recommended: Nearest Clinic");
-    }
+    onSubmit(symptoms);
   };
 
   return (
-    <div style={{ marginBottom: "20px" }}>
-      <h2>Symptom Checker</h2>
+    <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+      <input
+        type="text"
+        placeholder="Describe your symptoms (e.g. fever, accident, chest pain)"
+        value={symptoms}
+        onChange={(e) => setSymptoms(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "12px",
+          fontSize: "16px",
+          marginBottom: "10px",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+        }}
+      />
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter symptoms (e.g. fever, cough)"
-          value={symptoms}
-          onChange={(e) => setSymptoms(e.target.value)}
-          style={{ width: "300px", marginRight: "10px" }}
-        />
-        <button type="submit">Check</button>
-      </form>
+      <button
+        type="button"
+        onClick={() => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const { latitude, longitude } = pos.coords;
+              onSubmit(null, { latitude, longitude });
+            },
+            () => {
+              alert("Location access denied");
+            }
+          );
+        }}
+        style={{
+          padding: "8px 16px",
+          fontSize: "14px",
+          backgroundColor: "#16a34a",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+        }}
+      >
+        Use My Location
+      </button>
 
-      {suggestion && <p><strong>{suggestion}</strong></p>}
-    </div>
+    </form>
   );
 }
 

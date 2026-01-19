@@ -7,7 +7,7 @@ const clinicSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["clinic", "phc", "hospital"],
+    enum: ["clinic", "phc", "government_hospital"],
     required: true
   },
   medicines: [String],
