@@ -5,11 +5,12 @@ import Clinic from "../models/Clinic.js";
 
 dotenv.config();
 
+// Use a more reliable Overpass instance
 const OVERPASS_URL = "https://overpass.kumi.systems/api/interpreter";
 
-// Overpass QL query for Mumbai government hospitals & PHCs
-const query = `
-[out:json][timeout:25];
+// Mumbai bounding box (south, west, north, east)
+const OVERPASS_QUERY = `
+[out:json][timeout:60];
 (
   node["amenity"="hospital"](18.85,72.75,19.30,73.05);
   way["amenity"="hospital"](18.85,72.75,19.30,73.05);
@@ -19,64 +20,69 @@ const query = `
 out center tags;
 `;
 
-
 async function importData() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB connected");
 
-    const response = await axios.post(OVERPASS_URL, query, {
+    const response = await axios.post(OVERPASS_URL, OVERPASS_QUERY, {
       headers: { "Content-Type": "text/plain" },
+      timeout: 60000,
     });
 
-    const elements = response.data.elements;
+    // ✅ SAFETY CHECK (this fixes your teammate’s crash)
+    const elements = Array.isArray(response.data?.elements)
+      ? response.data.elements
+      : [];
+
+    if (elements.length === 0) {
+      console.log("No data received from Overpass API");
+      process.exit(0);
+    }
 
     const clinics = elements
-  .map((el) => {
-    const tags = el.tags || {};
-    const name = tags.name;
-    if (!name) return null;
+      .map((el) => {
+        const tags = el.tags || {};
+        if (!tags.name) return null;
 
-    const amenity = tags.amenity;
+        const amenity = tags.amenity;
 
-    // Assume hospitals are government by default
-    if (amenity === "hospital") {
-      return {
-        name,
-        type: "hospital",
-        location: "Mumbai",
-        medicines: [],
-      };
-    }
+        // Treat hospitals as government by default
+        if (amenity === "hospital") {
+          return {
+            name: tags.name,
+            type: "hospital",
+            location: "Mumbai",
+            medicines: [],
+          };
+        }
 
-    // For clinics, apply heuristic
-    if (amenity === "clinic") {
-      const operator = (tags.operator || "").toLowerCase();
-      const ownership = (tags.ownership || "").toLowerCase();
+        // Clinics → heuristic for government/public
+        if (amenity === "clinic") {
+          const operator = (tags.operator || "").toLowerCase();
+          const ownership = (tags.ownership || "").toLowerCase();
 
-      const looksGovernment =
-        operator.includes("government") ||
-        operator.includes("municipal") ||
-        operator.includes("bmc") ||
-        ownership.includes("government") ||
-        ownership.includes("public");
+          const looksGovernment =
+            operator.includes("government") ||
+            operator.includes("municipal") ||
+            operator.includes("bmc") ||
+            ownership.includes("government") ||
+            ownership.includes("public");
 
-      if (!looksGovernment) return null;
+          if (!looksGovernment) return null;
 
-      return {
-        name,
-        type: "clinic",
-        location: "Mumbai",
-        medicines: [],
-      };
-    }
+          return {
+            name: tags.name,
+            type: "clinic",
+            location: "Mumbai",
+            medicines: [],
+          };
+        }
 
-    return null;
-  })
-  .filter(Boolean);
+        return null;
+      })
+      .filter(Boolean);
 
-
-    // Optional: prevent duplicates by name
     for (const clinic of clinics) {
       await Clinic.updateOne(
         { name: clinic.name, location: "Mumbai" },
@@ -86,9 +92,9 @@ async function importData() {
     }
 
     console.log(`Imported ${clinics.length} government facilities from OSM`);
-    process.exit();
+    process.exit(0);
   } catch (err) {
-    console.error(err);
+    console.error("Import failed:", err.message);
     process.exit(1);
   }
 }
