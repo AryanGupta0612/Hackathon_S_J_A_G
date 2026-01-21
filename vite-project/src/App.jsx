@@ -12,16 +12,17 @@ function App() {
   const [recommendedCare, setRecommendedCare] = useState("any");
   const [userLocation, setUserLocation] = useState(null);
 
+  // 🔑 THIS FUNCTION IS THE IMPORTANT PART
   const handleSymptoms = (symptoms, location = null) => {
-  if (symptoms) {
-    const care = getRecommendedCare(symptoms);
-    setRecommendedCare(care);
-  }
-  if (location) {
-    setUserLocation(location);
-  }
-};
+    if (symptoms) {
+      const care = getRecommendedCare(symptoms);
+      setRecommendedCare(care);
+    }
 
+    if (location) {
+      setUserLocation(location);
+    }
+  };
 
   return (
     <BrowserRouter>
@@ -37,15 +38,14 @@ function App() {
             path="/"
             element={
               <>
-                {/* 👇 symptom input */}
+                {/* Symptom + Location input */}
                 <SymptomForm onSubmit={handleSymptoms} />
 
-                {/* 👇 clinic prioritization */}
+                {/* Clinic filtering + distance sorting */}
                 <ClinicList
                   recommendedCare={recommendedCare}
                   userLocation={userLocation}
                 />
-
 
                 <Noticeboard />
               </>

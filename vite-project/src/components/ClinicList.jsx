@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getClinics } from "../api";
+import ClinicMap from "./ClinicMap";
 
 function ClinicList({ recommendedCare, userLocation }) {
   const [clinics, setClinics] = useState([]);
@@ -12,7 +13,6 @@ function ClinicList({ recommendedCare, userLocation }) {
     fetchData();
   }, []);
 
-  // Haversine distance formula
   function getDistanceKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -26,13 +26,8 @@ function ClinicList({ recommendedCare, userLocation }) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
-  // Add distance to clinics
   const enrichedClinics = clinics.map((clinic) => {
-    if (
-      !userLocation ||
-      clinic.lat == null ||
-      clinic.lon == null
-    ) {
+    if (!userLocation || clinic.lat == null || clinic.lon == null) {
       return clinic;
     }
 
@@ -47,7 +42,6 @@ function ClinicList({ recommendedCare, userLocation }) {
     };
   });
 
-  // Sort by recommended care first, then nearest distance
   const sortedClinics = enrichedClinics.sort((a, b) => {
     const aMatch = recommendedCare === "any" || a.type === recommendedCare;
     const bMatch = recommendedCare === "any" || b.type === recommendedCare;
@@ -62,62 +56,29 @@ function ClinicList({ recommendedCare, userLocation }) {
     <div>
       <h2>Healthcare Facilities</h2>
 
-      {recommendedCare !== "any" && (
-        <p
-          style={{
-            backgroundColor: "#e0f2fe",
-            padding: "10px",
-            borderRadius: "6px",
-            marginBottom: "15px",
-            fontWeight: "bold",
-          }}
-        >
-          Based on your symptoms, visiting a{" "}
-          <span style={{ color: "#0f172a" }}>
-            {recommendedCare === "hospital" ? "hospital" : "clinic"}
-          </span>{" "}
-          is recommended.
-        </p>
+      {/* ✅ STEP B — THIS IS IT */}
+      {userLocation && (
+        <ClinicMap
+          clinics={sortedClinics}
+          userLocation={userLocation}
+        />
       )}
 
-      {sortedClinics.length === 0 && <p>No clinics found</p>}
+      {sortedClinics.map((clinic) => (
+        <div
+          key={clinic._id}
+          style={{ margin: "10px", padding: "10px", border: "1px solid #ccc" }}
+        >
+          <h3>{clinic.name}</h3>
+          <p>Type: {clinic.type}</p>
 
-      {sortedClinics.map((clinic) => {
-        const isRecommended =
-          recommendedCare === "any" ||
-          clinic.type === recommendedCare;
-
-        return (
-          <div
-            key={clinic._id}
-            style={{
-              border: isRecommended
-                ? "2px solid green"
-                : "1px solid #ccc",
-              margin: "10px",
-              padding: "10px",
-              opacity: isRecommended ? 1 : 0.35,
-              backgroundColor: isRecommended ? "#f0fff4" : "#fff",
-            }}
-          >
-            <h3>{clinic.name}</h3>
-            <p>Type: {clinic.type}</p>
-
-            {clinic.distance != null && (
-              <p>
-                <strong>Distance:</strong>{" "}
-                {clinic.distance.toFixed(2)} km
-              </p>
-            )}
-
-            {isRecommended && (
-              <strong style={{ color: "green" }}>
-                Recommended for your symptoms
-              </strong>
-            )}
-          </div>
-        );
-      })}
+          {clinic.distance != null && (
+            <p>
+              <strong>Distance:</strong> {clinic.distance.toFixed(2)} km
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
