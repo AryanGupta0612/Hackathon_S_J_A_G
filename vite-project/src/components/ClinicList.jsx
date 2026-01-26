@@ -13,19 +13,20 @@ function ClinicList({ recommendedCare, userLocation }) {
     fetchData();
   }, []);
 
+  // Haversine distance
   function getDistanceKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
         Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+        Math.sin(dLon / 2) ** 2;
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
+  // Add distance
   const enrichedClinics = clinics.map((clinic) => {
     if (!userLocation || clinic.lat == null || clinic.lon == null) {
       return clinic;
@@ -42,40 +43,85 @@ function ClinicList({ recommendedCare, userLocation }) {
     };
   });
 
-  const sortedClinics = enrichedClinics.sort((a, b) => {
-    const aMatch = recommendedCare === "any" || a.type === recommendedCare;
-    const bMatch = recommendedCare === "any" || b.type === recommendedCare;
+  // Sort by relevance + distance
+  const sortedClinics = enrichedClinics
+  .filter(c => c.distance != null) // safety
+  .sort((a, b) => {
+    const aTypeBonus =
+      recommendedCare === "any" || a.type === recommendedCare ? -0.5 : 0;
+    const bTypeBonus =
+      recommendedCare === "any" || b.type === recommendedCare ? -0.5 : 0;
 
-    if (aMatch !== bMatch) return bMatch - aMatch;
-    if (a.distance == null) return 1;
-    if (b.distance == null) return -1;
-    return a.distance - b.distance;
+    const aScore = a.distance + aTypeBonus;
+    const bScore = b.distance + bTypeBonus;
+
+    return aScore - bScore;
   });
+
+
+  // ✅ ONLY top 3
+  const top3 = sortedClinics.slice(0, 3);
 
   return (
     <div>
-      <h2>Healthcare Facilities</h2>
+      <h2 style={{ marginBottom: "10px" }}>Healthcare Facilities</h2>
 
-      {/* ✅ STEP B — THIS IS IT */}
       {userLocation && (
-        <ClinicMap
-          clinics={sortedClinics}
-          userLocation={userLocation}
-        />
+        <>
+          <p style={{ color: "#6b7280", marginBottom: "8px" }}>
+            Showing the best nearby healthcare facilities for you
+          </p>
+          <ClinicMap clinics={top3} userLocation={userLocation} />
+        </>
       )}
 
-      {sortedClinics.map((clinic) => (
+      <h3 style={{ marginTop: "20px" }}>Top Recommendations</h3>
+
+      {top3.map((clinic, idx) => (
         <div
           key={clinic._id}
-          style={{ margin: "10px", padding: "10px", border: "1px solid #ccc" }}
+          style={{
+            background: "#f0fdf4",
+            border: "2px solid #16a34a",
+            borderRadius: "10px",
+            padding: "14px",
+            marginTop: "10px",
+          }}
         >
-          <h3>{clinic.name}</h3>
-          <p>Type: {clinic.type}</p>
+          <h3 style={{ margin: 0 }}>
+            #{idx + 1} {clinic.name}
+          </h3>
 
-          {clinic.distance != null && (
-            <p>
-              <strong>Distance:</strong> {clinic.distance.toFixed(2)} km
+          {clinic.distance != null ? (
+            <p style={{ margin: "6px 0" }}>
+              📍 {clinic.distance.toFixed(2)} km away
             </p>
+          ) : (
+            <p style={{ margin: "6px 0", color: "#6b7280" }}>
+              📍 Distance unavailable
+            </p>
+          )}
+
+          <p style={{ color: "#16a34a", fontWeight: "bold" }}>
+            Recommended for your symptoms
+          </p>
+
+          {/* ✅ ROUTING (real roads, ETA, navigation) */}
+          {userLocation && clinic.lat && clinic.lon && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${clinic.lat},${clinic.lon}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                marginTop: "6px",
+                color: "#2563eb",
+                fontWeight: "bold",
+                textDecoration: "none",
+              }}
+            >
+              🚗 Get Directions
+            </a>
           )}
         </div>
       ))}

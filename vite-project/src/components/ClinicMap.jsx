@@ -1,68 +1,105 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import "leaflet-routing-machine";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 
-// Fix default marker icons (VERY IMPORTANT)
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+// 🧍 User location icon
+const userIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
+  iconSize: [35, 35],
+  iconAnchor: [17, 34],
 });
 
+// 🏥 Clinic icon
+const clinicIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/2967/2967350.png",
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+});
+
+// 🔁 Routing component
+function Routing({ userLocation, clinic }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!userLocation || !clinic) return;
+
+    const routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(userLocation.latitude, userLocation.longitude),
+        L.latLng(clinic.lat, clinic.lon),
+      ],
+      routeWhileDragging: false,
+      addWaypoints: false,
+      draggableWaypoints: false,
+      show: false,
+      lineOptions: {
+        styles: [{ color: "#2563eb", weight: 5 }],
+      },
+    }).addTo(map);
+
+    return () => {
+      map.removeControl(routingControl);
+    };
+  }, [userLocation, clinic, map]);
+
+  return null;
+}
+
 function ClinicMap({ clinics, userLocation }) {
-  // Default center (Mumbai fallback)
-  const center = userLocation
-    ? [userLocation.latitude, userLocation.longitude]
-    : [19.076, 72.8777];
+  const [selectedClinic, setSelectedClinic] = useState(null);
+
+  if (!userLocation) return null;
 
   return (
-    <div style={{ height: "400px", marginTop: "20px" }}>
-      <MapContainer
-        center={center}
-        zoom={13}
-        style={{ height: "100%", width: "100%" }}
+    <MapContainer
+      center={[userLocation.latitude, userLocation.longitude]}
+      zoom={13}
+      style={{ height: "350px", width: "100%", marginBottom: "20px" }}
+    >
+      <TileLayer
+        attribution="© OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {/* USER LOCATION */}
+      <Marker
+        position={[userLocation.latitude, userLocation.longitude]}
+        icon={userIcon}
       >
-        <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        <Popup>You are here</Popup>
+      </Marker>
+
+      {/* CLINIC MARKERS */}
+      {clinics.map((clinic) => (
+        <Marker
+          key={clinic._id}
+          position={[clinic.lat, clinic.lon]}
+          icon={clinicIcon}
+          eventHandlers={{
+            click: () => setSelectedClinic(clinic),
+          }}
+        >
+          <Popup>
+            <strong>{clinic.name}</strong>
+            <br />
+            {clinic.distance?.toFixed(2)} km away
+            <br />
+            <em>Click to show route</em>
+          </Popup>
+        </Marker>
+      ))}
+
+      {/* ROUTE */}
+      {selectedClinic && (
+        <Routing
+          userLocation={userLocation}
+          clinic={selectedClinic}
         />
-
-        {/* User marker */}
-        {userLocation && (
-          <Marker position={[userLocation.latitude, userLocation.longitude]}>
-            <Popup>You are here</Popup>
-          </Marker>
-        )}
-
-        {/* Clinic markers */}
-        {clinics.map(
-          (clinic) =>
-            clinic.lat &&
-            clinic.lon && (
-              <Marker
-                key={clinic._id}
-                position={[clinic.lat, clinic.lon]}
-              >
-                <Popup>
-                  <strong>{clinic.name}</strong>
-                  <br />
-                  Type: {clinic.type}
-                  {clinic.distance != null && (
-                    <>
-                      <br />
-                      Distance: {clinic.distance.toFixed(2)} km
-                    </>
-                  )}
-                </Popup>
-              </Marker>
-            )
-        )}
-      </MapContainer>
-    </div>
+      )}
+    </MapContainer>
   );
 }
 

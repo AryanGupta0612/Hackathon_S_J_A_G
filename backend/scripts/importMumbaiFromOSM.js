@@ -5,7 +5,6 @@ import Clinic from "../models/Clinic.js";
 
 dotenv.config();
 
-// Use a more reliable Overpass instance
 const OVERPASS_URL = "https://overpass.kumi.systems/api/interpreter";
 
 // Mumbai bounding box (south, west, north, east)
@@ -30,7 +29,6 @@ async function importData() {
       timeout: 60000,
     });
 
-    // ✅ SAFETY CHECK (this fixes your teammate’s crash)
     const elements = Array.isArray(response.data?.elements)
       ? response.data.elements
       : [];
@@ -45,19 +43,26 @@ async function importData() {
         const tags = el.tags || {};
         if (!tags.name) return null;
 
+        // ✅ FIX: extract coordinates safely
+        const lat = el.lat ?? el.center?.lat;
+        const lon = el.lon ?? el.center?.lon;
+        if (lat == null || lon == null) return null;
+
         const amenity = tags.amenity;
 
-        // Treat hospitals as government by default
+        // Hospitals → always include
         if (amenity === "hospital") {
           return {
             name: tags.name,
             type: "hospital",
             location: "Mumbai",
+            lat,
+            lon,
             medicines: [],
           };
         }
 
-        // Clinics → heuristic for government/public
+        // Clinics → government heuristic
         if (amenity === "clinic") {
           const operator = (tags.operator || "").toLowerCase();
           const ownership = (tags.ownership || "").toLowerCase();
@@ -75,6 +80,8 @@ async function importData() {
             name: tags.name,
             type: "clinic",
             location: "Mumbai",
+            lat,
+            lon,
             medicines: [],
           };
         }
@@ -86,12 +93,12 @@ async function importData() {
     for (const clinic of clinics) {
       await Clinic.updateOne(
         { name: clinic.name, location: "Mumbai" },
-        { $setOnInsert: clinic },
+        { $set: clinic },
         { upsert: true }
       );
     }
 
-    console.log(`Imported ${clinics.length} government facilities from OSM`);
+    console.log(`Imported ${clinics.length} facilities with coordinates`);
     process.exit(0);
   } catch (err) {
     console.error("Import failed:", err.message);

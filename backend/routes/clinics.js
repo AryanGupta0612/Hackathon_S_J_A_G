@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Get all clinics
 router.get("/", async (req, res) => {
-  const clinics = await Clinic.find();
+  const clinics = await Clinic.find({});
   res.json(clinics);
 });
 

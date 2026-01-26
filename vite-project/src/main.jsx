@@ -1,11 +1,25 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import OfflineFallback from "./components/OfflineFallback";
 
-import "leaflet/dist/leaflet.css";
+function Root() {
+  const [online, setOnline] = React.useState(navigator.onLine);
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+  React.useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  return online ? <App /> : <OfflineFallback />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root />);

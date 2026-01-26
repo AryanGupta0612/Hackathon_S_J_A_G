@@ -1,59 +1,40 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
-
-import SymptomForm from "./components/SymptomForm";
-import ClinicList from "./components/ClinicList";
-import Noticeboard from "./components/Noticeboard";
-import Admin from "./components/Admin";
-
-import { getRecommendedCare } from "./utils/symptomLogic";
+import InstallPrompt from "./components/InstallPrompt";
+  
+import Home from "./pages/Home";
+import Results from "./pages/Results";
 
 function App() {
   const [recommendedCare, setRecommendedCare] = useState("any");
   const [userLocation, setUserLocation] = useState(null);
-
-  // 🔑 THIS FUNCTION IS THE IMPORTANT PART
-  const handleSymptoms = (symptoms, location = null) => {
-    if (symptoms) {
-      const care = getRecommendedCare(symptoms);
-      setRecommendedCare(care);
-    }
-
-    if (location) {
-      setUserLocation(location);
-    }
-  };
-
+  const [symptoms, setSymptoms] = useState("");
+  <InstallPrompt />
   return (
     <BrowserRouter>
-      <div style={{ padding: "20px" }}>
-        <h1>Rural Health Access Assistant</h1>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Home
+              setSymptoms={setSymptoms}
+              setUserLocation={setUserLocation}
+            />
+          }
+        />
 
-        <nav style={{ marginBottom: "20px" }}>
-          <Link to="/">Home</Link> | <Link to="/admin">Admin</Link>
-        </nav>
-
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                {/* Symptom + Location input */}
-                <SymptomForm onSubmit={handleSymptoms} />
-
-                {/* Clinic filtering + distance sorting */}
-                <ClinicList
-                  recommendedCare={recommendedCare}
-                  userLocation={userLocation}
-                />
-
-                <Noticeboard />
-              </>
-            }
-          />
-          <Route path="/admin" element={<Admin />} />
-        </Routes>
-      </div>
+        <Route
+          path="/results"
+          element={
+            <Results
+              symptoms={symptoms}
+              userLocation={userLocation}
+              recommendedCare={recommendedCare}
+              setRecommendedCare={setRecommendedCare}
+            />
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }
