@@ -1,17 +1,23 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
+
+import Navbar from "./components/Navbar";
 import InstallPrompt from "./components/InstallPrompt";
-  
+
 import Home from "./pages/Home";
 import Results from "./pages/Results";
+import Notices from "./pages/Notices";
 
 function App() {
   const [recommendedCare, setRecommendedCare] = useState("any");
   const [userLocation, setUserLocation] = useState(null);
   const [symptoms, setSymptoms] = useState("");
-  <InstallPrompt />
+
   return (
     <BrowserRouter>
+      <InstallPrompt />
+      <Navbar />
+
       <Routes>
         <Route
           path="/"
@@ -34,6 +40,8 @@ function App() {
             />
           }
         />
+
+        <Route path="/notices" element={<Notices />} />
       </Routes>
     </BrowserRouter>
   );
