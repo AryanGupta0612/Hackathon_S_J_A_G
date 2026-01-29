@@ -47,7 +47,7 @@ function Home({ setSymptoms, setUserLocation }) {
       {/* MAIN CARD */}
       <div
         style={{
-          height: "100vh",
+          height: "80vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",

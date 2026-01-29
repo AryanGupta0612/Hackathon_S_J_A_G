@@ -1,13 +1,15 @@
 import { Link, NavLink } from "react-router-dom";
+import logo from "/src/assets/logo.png"; // adjust if path differs
 import "./Navbar.css";
 
 function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
+
         {/* Logo / Brand */}
         <Link to="/" className="navbar-logo">
-          🩺 CareFinder
+          <img src={logo} alt="CareFinder Logo" className="logo-img" />
         </Link>
 
         {/* Navigation links */}
@@ -30,6 +32,7 @@ function Navbar() {
             Notices
           </NavLink>
         </div>
+
       </div>
     </nav>
   );

@@ -4,7 +4,7 @@ function Notices() {
       <h1 style={{ marginBottom: "12px" }}>Public Health Notices</h1>
 
       <p style={{ color: "#6b7280", marginBottom: "24px" }}>
-        Official notices and updates (static for now)
+        Official notices and updates
       </p>
 
       <div
@@ -16,7 +16,7 @@ function Notices() {
           marginBottom: "16px",
         }}
       >
-        <h3>🩺 Seasonal Flu Advisory</h3>
+        <h3>Seasonal Flu Advisory</h3>
         <p style={{ color: "#374151" }}>
           Flu cases are rising. If you experience fever, cough, or fatigue,
           consult a nearby clinic.
@@ -31,7 +31,7 @@ function Notices() {
           border: "1px solid #e5e7eb",
         }}
       >
-        <h3>🏥 Hospital Capacity Update</h3>
+        <h3>Hospital Capacity Update</h3>
         <p style={{ color: "#374151" }}>
           Some hospitals may experience longer wait times during peak hours.
         </p>
